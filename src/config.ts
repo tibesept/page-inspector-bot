@@ -13,6 +13,12 @@ export interface IAppConfig {
     port: number;
     table: string;
   };
+
+  api: {
+    host: string;
+    key: string;
+  }
+
   server: {
     host: string;
     port: number;
@@ -24,7 +30,7 @@ export interface IAppConfig {
 const getEnv = <T>(key: string, parser?: (value: string) => T): T => {
   const value = process.env[key]
   if (!value) {
-    throw new Error(`Отсутствует переменная окружения: ${key}`)
+    throw new Error(`Отсутствует в .env: ${key}`)
   }
   if (parser) {
     return parser(value)
@@ -45,6 +51,11 @@ export const config: IAppConfig = {
     host: getEnv('DB_HOST'),
     port: getEnv('DB_PORT', parseInt),
     table: getEnv('DB_TABLE'),
+  },
+
+  api: {
+    host: getEnv('API_HOST'),
+    key: getEnv('API_KEY')
   },
 
   server: {

@@ -1,5 +1,6 @@
 // setup
 import { Bot, session, webhookCallback } from "grammy";
+import { conversations, createConversation } from "@grammyjs/conversations";
 // import express from "express";
 import { FileAdapter } from "@grammyjs/storage-file";
 
@@ -18,6 +19,9 @@ import { ISessionData, TMyContext } from "./types";
 import { errorHandler } from './handlers/error';
 import { basicCommands } from "./handlers/commands";
 
+// conversations
+import { newJob } from "./handlers/conversations";
+
 
 
 // Логика запуска, которая переключает режимы
@@ -35,13 +39,19 @@ const main = async () => {
     }),
   );
 
+
   // MIDDLEWARES
   bot.use(loggerMiddleware);
   bot.use(authMiddleware)
 
+  // CONVERSATIONS
+  bot.use(conversations());
+  bot.use(createConversation(newJob));
+
   // HANDLERS
   bot.use(basicCommands);
   
+
   // ERROR HANDLER
   bot.catch(errorHandler);
 

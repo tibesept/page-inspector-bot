@@ -1,5 +1,6 @@
 import { Composer } from "grammy";
 import { TMyContext } from "../../types";
+import { EConversations } from "../conversations";
 
 export const basicCommands = new Composer<TMyContext>();
 
@@ -28,3 +29,17 @@ basicCommands.command("start", async (ctx) => {
 Но пока этого ничего нет и бот бесполезен!
 `);
 });
+
+
+basicCommands.command("new", async (ctx) => {
+    await ctx.conversation.enter(EConversations.newJob);
+})
+
+basicCommands.command("me", async (ctx) => {
+    await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
+
+    const balance = 30//await getBalance()
+    await ctx.reply(`
+        Баланс: ${balance} кредитов
+    `)
+})

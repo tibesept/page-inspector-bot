@@ -10,5 +10,5 @@ export interface ISessionData {
     language: ELanguages;
 }
 
-export type TMyContext = Context & SessionFlavor<ISessionData>;
+export type TMyContext = ConversationFlavor<Context & SessionFlavor<ISessionData>>;
 export type TMyConversation = Conversation<TMyContext>;
