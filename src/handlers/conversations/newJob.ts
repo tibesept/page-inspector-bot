@@ -24,7 +24,7 @@ export async function newJob(conversation: Conversation, ctx: Context) {
 
     await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
     await apiService.createJob({
-        user_id: ctx.from?.id,
+        userId: ctx.from?.id,
         url: url, 
         type: 1,
         depth: 1

@@ -1,17 +1,10 @@
 import 'dotenv/config'
 
-
-
 export interface IAppConfig {
   env: "dev" | "prod";
   telegram: {
     token: string;
     botAdmins: number[];
-  };
-  db: {
-    host: string;
-    port: number;
-    table: string;
   };
 
   api: {
@@ -45,12 +38,6 @@ export const config: IAppConfig = {
   telegram: {
     token: getEnv('BOT_TOKEN'),
     botAdmins: getEnv('BOT_ADMINS', (s: string) => JSON.parse(s || '')),
-  },
-
-  db: {
-    host: getEnv('DB_HOST'),
-    port: getEnv('DB_PORT', parseInt),
-    table: getEnv('DB_TABLE'),
   },
 
   api: {

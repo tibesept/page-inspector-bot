@@ -1,6 +1,7 @@
 import { Composer } from "grammy";
 import { TMyContext } from "../../types";
 import { EConversations } from "../conversations";
+import { apiService } from "../../ApiService";
 
 export const basicCommands = new Composer<TMyContext>();
 
@@ -31,15 +32,20 @@ basicCommands.command("start", async (ctx) => {
 });
 
 
-basicCommands.command("new", async (ctx) => {
+basicCommands.command("inspect", async (ctx) => {
     await ctx.conversation.enter(EConversations.newJob);
 })
 
 basicCommands.command("me", async (ctx) => {
-    await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
+    if(!ctx.from?.id) {
+        return
+    }
 
-    const balance = 30//await getBalance()
+    // await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
+
+    const data = await apiService.getUser(ctx.from.id);
+
     await ctx.reply(`
-        Баланс: ${balance} кредитов
+        Баланс: ${data.balance} кредитов
     `)
 })

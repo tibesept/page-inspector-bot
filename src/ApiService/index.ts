@@ -1,8 +1,9 @@
-// src/api/api-service.ts
 import { _apiHttpClient } from "../HttpClient";
 import {
     CreateJobBody,
     Job,
+    JobsDone,
+    JobsDoneSchema,
     User,
     createJobBodySchema,
     jobSchema,
@@ -23,13 +24,23 @@ class ApiService {
         return this.client.post("/createJob", body, jobSchema);
     }
 
+    public getJobsDone(id: number): Promise<JobsDone> {
+        return this.client.get(`/getJobsDone`, JobsDoneSchema);
+    }
+
     public getJob(id: number): Promise<Job> {
         return this.client.get(`/getJob/${id}`, jobSchema);
     }
 
+
     // USER
     public getUser(id: number): Promise<User> {
-        return this.client.get(`/user/${id}`, userSchema);
+        // return this.client.get(`/user/${id}`, userSchema);
+
+        return Promise.resolve({ // mock
+            userId: id,
+            balance: 12345
+        })
     }
 
     public createUser(id: number): Promise<User> {
