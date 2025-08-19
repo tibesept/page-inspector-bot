@@ -1,5 +1,5 @@
 // src/api/api-service.ts
-import { apiHttpClient } from "../HttpClient";
+import { _apiHttpClient } from "../HttpClient";
 import {
     CreateJobBody,
     Job,
@@ -9,7 +9,7 @@ import {
     userSchema,
 } from "./types";
 
-type HttpClient = typeof apiHttpClient;
+type HttpClient = typeof _apiHttpClient;
 
 /**
  * Позволяет удобно отправлять HTTP запросы в API
@@ -41,4 +41,4 @@ class ApiService {
  * Единственный экземпляр ApiService, который используется ботом
  * он создается с единственным экземпляром http клиента.
  */
-export const apiService = new ApiService(apiHttpClient);
+export const apiService = new ApiService(_apiHttpClient);

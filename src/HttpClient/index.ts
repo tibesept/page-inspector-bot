@@ -74,4 +74,4 @@ class ApiHttpClient {
 /**
  * Клиент для HTTP запросов к API 
  */
-export const apiHttpClient = new ApiHttpClient();
+export const _apiHttpClient = new ApiHttpClient();
