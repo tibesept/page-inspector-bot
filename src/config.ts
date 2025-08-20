@@ -1,53 +1,51 @@
-import 'dotenv/config'
+import "dotenv/config";
 
 export interface IAppConfig {
-  env: "dev" | "prod";
-  telegram: {
-    token: string;
-    botAdmins: number[];
-  };
+    env: "dev" | "prod";
+    telegram: {
+        token: string;
+        botAdmins: number[];
+    };
 
-  api: {
-    host: string;
-    key: string;
-  }
+    api: {
+        host: string;
+        key: string;
+    };
 
-  server: {
-    host: string;
-    port: number;
-    webhookUrl: string;
-  };
+    server: {
+        host: string;
+        port: number;
+        webhookUrl: string;
+    };
 }
-
 
 const getEnv = <T>(key: string, parser?: (value: string) => T): T => {
-  const value = process.env[key]
-  if (!value) {
-    throw new Error(`Отсутствует в .env: ${key}`)
-  }
-  if (parser) {
-    return parser(value)
-  }
-  return value as T
-}
-
+    const value = process.env[key];
+    if (!value) {
+        throw new Error(`Отсутствует в .env: ${key}`);
+    }
+    if (parser) {
+        return parser(value);
+    }
+    return value as T;
+};
 
 export const config: IAppConfig = {
-  env: getEnv('NODE_ENV'),
+    env: getEnv("NODE_ENV"),
 
-  telegram: {
-    token: getEnv('BOT_TOKEN'),
-    botAdmins: getEnv('BOT_ADMINS', (s: string) => JSON.parse(s || '')),
-  },
+    telegram: {
+        token: getEnv("BOT_TOKEN"),
+        botAdmins: getEnv("BOT_ADMINS", (s: string) => JSON.parse(s || "")),
+    },
 
-  api: {
-    host: getEnv('API_HOST'),
-    key: getEnv('API_KEY')
-  },
+    api: {
+        host: getEnv("API_HOST"),
+        key: getEnv("API_KEY"),
+    },
 
-  server: {
-    host: getEnv('SERVER_HOST'),
-    port: getEnv('SERVER_PORT', parseInt),
-    webhookUrl: getEnv('WEBHOOK_URL'),
-  }
-}
+    server: {
+        host: getEnv("SERVER_HOST"),
+        port: getEnv("SERVER_PORT", parseInt),
+        webhookUrl: getEnv("WEBHOOK_URL"),
+    },
+};

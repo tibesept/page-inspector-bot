@@ -35,16 +35,7 @@ class ApiService {
 
     // USER
     public getUser(id: number): Promise<User> {
-        // return this.client.get(`/user/${id}`, userSchema);
-
-        return Promise.resolve({ // mock
-            userId: id,
-            balance: 12345
-        })
-    }
-
-    public createUser(id: number): Promise<User> {
-        return this.client.post(`/user/${id}`, {}, userSchema);
+        return this.client.get(`/user/${id}`, userSchema);
     }
 }
 

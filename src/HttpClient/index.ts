@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { config } from "../config";
+import { logger } from "../logger";
 
 /**
  * Отправка HTTP запросов к API
@@ -41,7 +42,10 @@ class ApiHttpClient {
                 Authorization: `Bearer ${this.apiKey}`,
             },
             body: body ? JSON.stringify(body) : undefined,
+            signal: AbortSignal.timeout(4000) // таймаут
         };
+
+        logger.debug(`Doing ${method} request to URL: ${url}, with body: ${body}`);
 
         try {
             const response = await fetch(url, options);
@@ -65,7 +69,7 @@ class ApiHttpClient {
 
             return result.data;
         } catch (error) {
-            console.error("HTTP Request Failed:", error);
+            console.error(`HTTP Request ${url} Failed:`, error);
             throw error;
         }
     }

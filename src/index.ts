@@ -9,60 +9,58 @@ import { config } from "./config";
 
 // middlewares
 import { logger, loggerMiddleware } from "./logger";
-import { authMiddleware } from "./auth";
+import { authMiddleware, devCheckMiddleware } from "./auth";
 
 // session
 import * as useSession from "./session";
 import { ISessionData, TMyContext } from "./types";
 
 // handlers
-import { errorHandler } from './handlers/error';
+import { errorHandler } from "./handlers/error";
 import { basicCommands } from "./handlers/commands";
 
 // conversations
 import { newJob } from "./handlers/conversations";
 
-
-
 // Логика запуска, которая переключает режимы
 const main = async () => {
-  const bot = new Bot<TMyContext>(config.telegram.token);
+    const bot = new Bot<TMyContext>(config.telegram.token);
 
-  // SESSION
-  bot.use(
-    session({
-      initial: useSession.initial,
-      getSessionKey: useSession.getSessionKey,
-      storage: new FileAdapter<ISessionData>({
-        dirName: "sessions",
-      }),
-    }),
-  );
+    // SESSION
+    bot.use(
+        session({
+            initial: useSession.initial,
+            getSessionKey: useSession.getSessionKey,
+            storage: new FileAdapter<ISessionData>({
+                dirName: "sessions",
+            }),
+        }),
+    );
 
+    // MIDDLEWARES
+    bot.use(loggerMiddleware);
+    bot.use(devCheckMiddleware);
+    bot.use(authMiddleware);
 
-  // MIDDLEWARES
-  bot.use(loggerMiddleware);
-  bot.use(authMiddleware)
+    // CONVERSATIONS
+    bot.use(conversations());
+    bot.use(createConversation(newJob));
 
-  // CONVERSATIONS
-  bot.use(conversations());
-  bot.use(createConversation(newJob));
+    // HANDLERS
+    bot.use(basicCommands);
 
-  // HANDLERS
-  bot.use(basicCommands);
-  
+    // ERROR HANDLER
+    bot.catch(errorHandler);
 
-  // ERROR HANDLER
-  bot.catch(errorHandler);
-
-  // START
-  bot.start({
-    onStart: ({ username }) => {
-      logger.info({
-        msg: "Bot running!", username
-      })
-    }
-  })
+    // START
+    bot.start({
+        onStart: ({ username }) => {
+            logger.info({
+                msg: "Bot running!",
+                username,
+            });
+        },
+    });
 };
 
 main();

@@ -46,6 +46,6 @@ basicCommands.command("me", async (ctx) => {
     const data = await apiService.getUser(ctx.from.id);
 
     await ctx.reply(`
-        Баланс: ${data.balance} кредитов
+        Баланс: ${data.balance} С
     `)
-})
+});

@@ -1,7 +1,9 @@
 import { Context, NextFunction } from "grammy";
 import { devFilter } from "./filters";
+import { apiService } from "./ApiService";
+import { logger } from "./logger";
 
-export async function authMiddleware(
+export async function devCheckMiddleware(
     ctx: Context,
     next: NextFunction
 ): Promise<void> {
@@ -10,6 +12,19 @@ export async function authMiddleware(
     }
 }
 
-// TODO
-// - сделать authMiddleware на проверку админом в режиме dev (перед ВСЕМИ сообщениями)
-// - сделать первые хендлеры команд
+
+export async function authMiddleware(
+    ctx: Context,
+    next: NextFunction
+): Promise<void> {
+    const userId = ctx.message?.from.id
+
+    if(!userId) {
+        logger.error(`USER ID NOT FOUND: ${ctx}`);
+        await next();
+        return
+    }
+
+    await apiService.getUser(userId);
+    await next();
+}
