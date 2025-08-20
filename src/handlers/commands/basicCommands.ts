@@ -31,14 +31,13 @@ basicCommands.command("start", async (ctx) => {
 `);
 });
 
-
 basicCommands.command("inspect", async (ctx) => {
     await ctx.conversation.enter(EConversations.newJob);
-})
+});
 
 basicCommands.command("me", async (ctx) => {
-    if(!ctx.from?.id) {
-        return
+    if (!ctx.from?.id) {
+        return;
     }
 
     // await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
@@ -47,5 +46,5 @@ basicCommands.command("me", async (ctx) => {
 
     await ctx.reply(`
         Баланс: ${data.balance} С
-    `)
+    `);
 });

@@ -1,5 +1,5 @@
 export enum EConversations {
-    newJob = 'newJob',
+    newJob = "newJob",
 }
 
-export * from './newJob';
+export * from "./newJob";

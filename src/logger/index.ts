@@ -15,19 +15,21 @@ export const logger = pino({
                 options: {
                     ignore: "pid,hostname",
                     colorize: true,
-                    translateTime: true
-                }
-            }
-        ]
-    }
-})
+                    translateTime: true,
+                },
+            },
+        ],
+    },
+});
 
 export async function loggerMiddleware(
     ctx: Context,
-    next: NextFunction
+    next: NextFunction,
 ): Promise<void> {
-    logger.debug(colorize({
-        msg: ctx.msg
-    }));
+    logger.debug(
+        colorize({
+            msg: ctx.msg,
+        }),
+    );
     await next();
 }

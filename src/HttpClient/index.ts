@@ -42,10 +42,12 @@ class ApiHttpClient {
                 Authorization: `Bearer ${this.apiKey}`,
             },
             body: body ? JSON.stringify(body) : undefined,
-            signal: AbortSignal.timeout(4000) // таймаут
+            signal: AbortSignal.timeout(4000), // таймаут
         };
 
-        logger.debug(`Doing ${method} request to URL: ${url}, with body: ${body}`);
+        logger.debug(
+            `Doing ${method} request to URL: ${url}, with body: ${body}`,
+        );
 
         try {
             const response = await fetch(url, options);
@@ -76,6 +78,6 @@ class ApiHttpClient {
 }
 
 /**
- * Клиент для HTTP запросов к API 
+ * Клиент для HTTP запросов к API
  */
 export const _apiHttpClient = new ApiHttpClient();

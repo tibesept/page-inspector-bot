@@ -1,1 +1,1 @@
-export * from './basicCommands';
+export * from "./basicCommands";

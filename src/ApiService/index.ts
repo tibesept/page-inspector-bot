@@ -32,7 +32,6 @@ class ApiService {
         return this.client.get(`/getJob/${id}`, jobSchema);
     }
 
-
     // USER
     public getUser(id: number): Promise<User> {
         return this.client.get(`/user/${id}`, userSchema);
