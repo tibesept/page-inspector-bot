@@ -28,6 +28,14 @@ class ApiHttpClient {
         return this.request(path, "POST", schema, body);
     }
 
+    public put<T>(
+        path: string,
+        body: Record<string, unknown>,
+        schema: z.ZodSchema<T>,
+    ): Promise<T> {
+        return this.request(path, "PUT", schema, body);
+    }
+
     private async request<T>(
         path: string,
         method: string,

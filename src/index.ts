@@ -21,6 +21,7 @@ import { basicCommands } from "./handlers/commands";
 
 // conversations
 import { newJob } from "./handlers/conversations";
+import { pollApi } from "./apiPolling";
 
 // Логика запуска, которая переключает режимы
 const main = async () => {
@@ -61,6 +62,8 @@ const main = async () => {
             });
         },
     });
+
+    pollApi(bot, config.api.polling_interval_ms);
 };
 
 main();

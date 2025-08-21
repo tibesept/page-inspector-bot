@@ -42,6 +42,8 @@ basicCommands.command("me", async (ctx) => {
 
     // await ctx.api.sendChatAction(ctx?.chatId || 0, "typing") // печатает
 
+    // TODO: забор данных о юзере из сессии, без повторного запроса
+    // getUser выполняется в middleware и кладет данные в сессию
     const data = await apiService.getUser(ctx.from.id);
 
     await ctx.reply(`

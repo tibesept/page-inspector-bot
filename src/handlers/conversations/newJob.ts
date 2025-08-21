@@ -28,7 +28,7 @@ export async function newJob(conversation: Conversation, ctx: Context) {
     await apiService.createJob({
         userId: ctx.from?.id,
         url: url,
-        type: 1,
+        type: 0,
         depth: 1,
     });
 }

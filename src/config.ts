@@ -10,6 +10,7 @@ export interface IAppConfig {
     api: {
         host: string;
         key: string;
+        polling_interval_ms: number;
     };
 
     server: {
@@ -41,6 +42,7 @@ export const config: IAppConfig = {
     api: {
         host: getEnv("API_HOST"),
         key: getEnv("API_KEY"),
+        polling_interval_ms: getEnv("API_POLLING_INTERVAL_MS", parseInt)
     },
 
     server: {
