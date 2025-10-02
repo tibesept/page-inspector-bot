@@ -53,8 +53,8 @@ class ApiHttpClient {
             signal: AbortSignal.timeout(4000), // таймаут
         };
 
-        logger.debug(
-            `Doing ${method} request to URL: ${url}, with body: ${body}`,
+        logger.debug(body,
+            `Doing ${method} request to URL: ${url}${body ? ' with body:' : ''}`
         );
 
         try {
@@ -68,8 +68,8 @@ class ApiHttpClient {
             }
 
             const data = await response.json();
+            
             const result = schema.safeParse(data);
-
             if (!result.success) {
                 console.error("Zod validation error:", result.error);
                 throw new Error(

@@ -9,6 +9,7 @@ export const createJobBodySchema = z.object({
 });
 
 export const updateJobBodySchema = z.object({
+    status: z.string(),
     result: z.string(),
 });
 
@@ -50,10 +51,32 @@ export const jobTaskSchema = z.object({
     userId: z.number(),
     url: z.string(),
     status: z.string(),
+    type: z.number(),
+    depth: z.number()
 });
+
+
+// WORKER
+
+export const jobWorkerResultSchema = z.object({
+    screenshot: z.string(), // base64 строка
+    status: z.number().nullable(), // HTTP-код или null
+    seo: z.object({
+        title: z.string().nullable(),
+        description: z.string().nullable(),
+        h1: z.string().nullable(),
+        linksCount: z.number(),
+        internalLinks: z.number(),
+        externalLinks: z.number(),
+        robotsTxtExists: z.boolean(),
+    }),
+});
+
+export type JobWorkerResultDTO = z.infer<typeof jobWorkerResultSchema>;
 
 // TYPES
 export type CreateJobBody = z.infer<typeof createJobBodySchema>;
+export type UpdateJobBody = z.infer<typeof updateJobBodySchema>
 export type JobsReadyDTO = z.infer<typeof jobsReadySchemaDTO>;
 export type JobDTO = z.infer<typeof jobSchemaDTO>;
 export type UserDTO = z.infer<typeof userSchemaDTO>;

@@ -22,7 +22,6 @@ export async function newJob(conversation: Conversation, ctx: Context) {
     logger.info(`got url: ${url}`);
 
     await ctx.api.deleteMessage(botMessage.chat.id, botMessage.message_id);
-    await ctx.reply(`Принято! Ожидайте`);
 
     await ctx.api.sendChatAction(ctx?.chatId || 0, "typing"); // печатает
     await apiService.createJob({

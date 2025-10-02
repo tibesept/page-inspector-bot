@@ -29,9 +29,9 @@ class ApiService {
         return this.client.get(`/jobs/${id}`, jobSchemaDTO);
     }
 
-    public createJob(body: CreateJobBody): Promise<JobDTO> {
+    public createJob(body: CreateJobBody): Promise<CreateJobDTO> {
         createJobBodySchema.parse(body); // валидация body
-        return this.client.post("/jobs", body, jobSchemaDTO);
+        return this.client.post("/jobs", body, postJobSchemaDTO);
     }
 
     public markJobAsSent(id: number): Promise<CreateJobDTO> {
