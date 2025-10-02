@@ -23,6 +23,9 @@ import { basicCommands } from "./handlers/commands";
 import { newJob } from "./handlers/conversations";
 import { pollApi } from "./apiPolling";
 
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first'); // используем ipv4
+
 // Логика запуска, которая переключает режимы
 const main = async () => {
     const bot = new Bot<TMyContext>(config.telegram.token);
