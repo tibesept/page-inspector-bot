@@ -41,6 +41,7 @@ function getProcessJob(bot: Bot<TMyContext>) {
  - Всего ссылок: <code>${jobResult.seo.linksCount}</code>
  - Внутренних: <code>${jobResult.seo.internalLinks}</code>
  - Внешних: <code>${jobResult.seo.externalLinks}</code>
+ - Битых ссылок: <code>${jobResult.brokenLinks.length}</code>
 
 🔎 <b>SEO-показатели:</b>
  - title: <code>${jobResult.seo.title ? jobResult.seo.title : "❌ Не найден"}</code>
@@ -49,6 +50,7 @@ function getProcessJob(bot: Bot<TMyContext>) {
 
 🤖 <b>Файл robots.txt:</b>
  - Статус: <code>${jobResult.seo.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
+
 `;
 
         await bot.api.sendPhoto(
@@ -62,6 +64,10 @@ function getProcessJob(bot: Bot<TMyContext>) {
                 parse_mode: "HTML",
             },
         );
+        if(jobResult.brokenLinks.length) {
+            await bot.api.sendMessage(job.userId, `Битые ссылки:\n${jobResult.brokenLinks.reduce((a,b) => a+"\n"+b.url, "")}`);
+        }
+
         await apiService.markJobAsSent(job.jobId);
     };
 }
