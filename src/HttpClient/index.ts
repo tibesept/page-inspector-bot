@@ -13,7 +13,7 @@ class ApiHttpClient {
     constructor() {
         this.baseUrl = config.api.host;
         this.apiKey = config.api.key;
-        console.log("ApiHttpClient initialized");
+        logger.info("ApiHttpClient initialized");
     }
 
     public get<T>(path: string, schema: z.ZodSchema<T>): Promise<T> {
@@ -71,7 +71,8 @@ class ApiHttpClient {
             
             const result = schema.safeParse(data);
             if (!result.success) {
-                console.error("Zod validation error:", result.error);
+                logger.error(result.error, `HTTP Request ${url} Failed:\n`);
+
                 throw new Error(
                     `Invalid data from API: ${result.error.message}`,
                 );
@@ -79,7 +80,7 @@ class ApiHttpClient {
 
             return result.data;
         } catch (error) {
-            console.error(`HTTP Request ${url} Failed:`, error);
+            logger.error(error, `HTTP Request Failed (${url}) :\n`);
             throw error;
         }
     }

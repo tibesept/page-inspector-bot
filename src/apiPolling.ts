@@ -76,12 +76,16 @@ export async function pollApi(
     bot: Bot<TMyContext>,
     interval: number,
 ): Promise<void> {
-    logger.debug("Polled API!");
     try {
+        logger.debug("Polling API...");
         const result = await apiService.getJobsDone();
+        logger.debug("Got jobs data...");
+        
         const processJob = getProcessJob(bot);
-
+        
+        logger.debug("Processing jobs...");
         await Promise.all(result.map(processJob));
+        logger.debug("Jobs processed successfully");
     } catch (error) {
         logger.error(error, "Polling failed!");
     }

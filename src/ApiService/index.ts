@@ -17,6 +17,12 @@ type HttpClient = typeof _apiHttpClient;
 /**
  * Позволяет удобно отправлять HTTP запросы в API
  */
+
+// TODO: РАЗДЕЛЕНИЕ ОТВЕТСТВЕННОСТИ!!!!
+// - Убрать ApiService 
+// - Создать независимые репозитории JobRepository и UserRepository (получение данных из API в нужном формате)
+// - Создать над ними сервисы JobService и UserService (бизнес-логика)
+// - pollApi поместить в JobService (startPolling, stopPolling, poll) 
 class ApiService {
     constructor(private readonly client: HttpClient) {}
 
