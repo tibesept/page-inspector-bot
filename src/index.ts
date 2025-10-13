@@ -1,72 +1,45 @@
-// setup
-import { Bot, session, webhookCallback } from "grammy";
-import { conversations, createConversation } from "@grammyjs/conversations";
-// import express from "express";
-import { FileAdapter } from "@grammyjs/storage-file";
-
-// config
-import { config } from "./config";
-
-// middlewares
-import { logger, loggerMiddleware } from "./logger";
-import { authMiddleware, devCheckMiddleware } from "./auth";
-
-// session
-import * as useSession from "./session";
-import { ISessionData, TMyContext } from "./types";
-
-// handlers
-import { errorHandler } from "./handlers/error";
-import { basicCommands } from "./handlers/commands";
-
-// conversations
-import { newJob } from "./handlers/conversations";
-import { pollApi } from "./apiPolling";
-
 import dns from 'dns';
-dns.setDefaultResultOrder('ipv4first'); // используем ipv4
+dns.setDefaultResultOrder('ipv4first');
 
-// Логика запуска, которая переключает режимы
-const main = async () => {
+// Core
+import { config } from '#core/config.js';
+import { logger } from '#core/logger.js';
+
+// Layers
+import { ApiHttpClient } from '#api/HttpClient.js';
+import { ApiService } from '#api/ApiService.js';
+import { JobsRepository } from '#repositories/JobsRepository.js';
+import { JobService } from '#services/JobService.js';
+import { configureBot } from '#bot/bot.js';
+import { App } from './app.js';
+import { Bot } from 'grammy';
+import { TMyContext } from '#types/state.js';
+import { UsersRepository } from '#repositories/UsersRepository.js';
+import { UserService } from '#services/UserService.js';
+
+const bootstrap = async () => {
+    logger.info("Starting application bootstrap...");
     const bot = new Bot<TMyContext>(config.telegram.token);
 
-    // SESSION
-    bot.use(
-        session({
-            initial: useSession.initial,
-            getSessionKey: useSession.getSessionKey,
-            storage: new FileAdapter<ISessionData>({
-                dirName: "sessions",
-            }),
-        }),
-    );
+    // api
+    const httpClient = new ApiHttpClient(config.api);
+    const apiService = new ApiService(httpClient);
+    
+    
+    // jobs
+    const jobsRepository = new JobsRepository(apiService);
+    const jobService = new JobService(bot, jobsRepository, config.api.polling_interval_ms);
 
-    // MIDDLEWARES
-    bot.use(loggerMiddleware);
-    bot.use(devCheckMiddleware);
-    bot.use(authMiddleware);
 
-    // CONVERSATIONS
-    bot.use(conversations());
-    bot.use(createConversation(newJob));
+    // users
+    const usersRepository = new UsersRepository(apiService);
+    const userService = new UserService(usersRepository);
 
-    // HANDLERS
-    bot.use(basicCommands);
+    configureBot(bot, usersRepository, userService, jobService);
 
-    // ERROR HANDLER
-    bot.catch(errorHandler);
+    const app = new App(bot, jobService);
 
-    // START
-    bot.start({
-        onStart: ({ username }) => {
-            logger.info({
-                msg: "Bot running!",
-                username,
-            });
-        },
-    });
-
-    pollApi(bot, config.api.polling_interval_ms);
+    await app.start();
 };
 
-main();
+bootstrap();

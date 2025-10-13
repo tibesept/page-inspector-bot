@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { config } from "#core/config.js";
 import { Context } from "grammy";
 import { isUserHasId } from "grammy-guard";
 

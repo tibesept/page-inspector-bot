@@ -1,12 +1,12 @@
 import { Conversation } from "@grammyjs/conversations";
+import { logger } from "#core/logger.js";
+import { TMyContext } from "#types/state.js";
 import { Context } from "grammy";
-import { logger } from "../../logger";
-import { apiService } from "../../ApiService";
 
 const RegexURL =
     /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
 
-export async function newJob(conversation: Conversation, ctx: Context) {
+export async function newJob(conversation: Conversation<Context, TMyContext>, ctx: TMyContext) {
     const botMessage = await ctx.reply(
         "Отправьте ссылку на страницу. Она обязательно должна начинаться с протокола HTTP/HTTPS",
     );
@@ -24,10 +24,9 @@ export async function newJob(conversation: Conversation, ctx: Context) {
     await ctx.api.deleteMessage(botMessage.chat.id, botMessage.message_id);
 
     await ctx.api.sendChatAction(ctx?.chatId || 0, "typing"); // печатает
-    await apiService.createJob({
+
+    await ctx.jobService.createNewJob({
         userId: ctx.from?.id,
-        url: url,
-        type: 0,
-        depth: 1,
+        url: url
     });
 }
