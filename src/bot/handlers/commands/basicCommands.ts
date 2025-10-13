@@ -33,7 +33,7 @@ basicCommands.command("start", async (ctx) => {
 });
 
 basicCommands.command("inspect", async (ctx) => {
-    await ctx.conversation.enter(EConversations.newJob);
+    await ctx.conversation.enter(EConversations.newJob, ctx.match);
 });
 
 
