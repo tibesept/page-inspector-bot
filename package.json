@@ -1,36 +1,46 @@
 {
-  "name": "page-inspector-bot",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "scripts": {
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
-    "check-format": "prettier --check \"src/**/*.{ts,js,json}\""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@grammyjs/conversations": "^2.1.0",
-    "@grammyjs/storage-file": "^2.5.1",
-    "@types/node": "^24.3.0",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "grammy": "^1.38.1",
-    "grammy-guard": "^0.5.0",
-    "json-colorizer": "^3.0.1",
-    "pino": "^9.9.0",
-    "pino-pretty": "^13.1.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
-    "zod": "^4.0.17"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.3",
-    "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
-  }
+    "name": "page-inspector-bot",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+        "dev": "nodemon --watch src --ext ts,json --exec \"tsx src/index.ts\"",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+        "check-format": "prettier --check \"src/**/*.{ts,js,json}\""
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "type": "module",
+    "dependencies": {
+        "@grammyjs/conversations": "^2.1.0",
+        "@grammyjs/storage-file": "^2.5.1",
+        "@types/node": "^24.3.0",
+        "dotenv": "^17.2.1",
+        "express": "^5.1.0",
+        "grammy": "^1.38.1",
+        "grammy-guard": "^0.5.0",
+        "json-colorizer": "^3.0.1",
+        "pino": "^9.9.0",
+        "pino-pretty": "^13.1.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.2",
+        "zod": "^4.0.17"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.3",
+        "nodemon": "^3.1.10",
+        "prettier": "^3.6.2",
+        "tsx": "^4.20.6"
+    },
+    "imports": {
+        "#api/*": "./dist/api/*.js",
+        "#bot/*": "./dist/bot/*.js",
+        "#core/*": "./dist/core/*.js",
+        "#repositories/*": "./dist/repositories/*.js",
+        "#services/*": "./dist/services/*.js",
+        "#types/*": "./dist/types/*.js"
+    }
 }
