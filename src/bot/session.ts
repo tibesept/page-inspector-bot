@@ -1,5 +1,5 @@
 import { Context } from "grammy";
-import { ELanguages, ISessionData } from "./types";
+import { ELanguages, ISessionData } from "#types/state.js";
 
 export function initial(): ISessionData {
     return {

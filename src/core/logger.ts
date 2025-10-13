@@ -1,6 +1,6 @@
 import { Context, NextFunction } from "grammy";
 import { pino } from "pino";
-import { config } from "../config";
+import { config } from "#core/config.js";
 import { colorize } from "json-colorizer";
 
 const LOG_LEVEL = config.env === "dev" ? "debug" : "info";

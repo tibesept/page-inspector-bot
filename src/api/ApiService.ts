@@ -1,4 +1,4 @@
-import { _apiHttpClient } from "../HttpClient";
+import { ApiHttpClient } from "#api/HttpClient.js";
 import {
     CreateJobBody,
     createJobBodySchema,
@@ -10,9 +10,8 @@ import {
     postJobSchemaDTO,
     UserDTO,
     userSchemaDTO,
-} from "../types";
+} from "#api/types.js";
 
-type HttpClient = typeof _apiHttpClient;
 
 /**
  * Позволяет удобно отправлять HTTP запросы в API
@@ -23,8 +22,8 @@ type HttpClient = typeof _apiHttpClient;
 // - Создать независимые репозитории JobRepository и UserRepository (получение данных из API в нужном формате)
 // - Создать над ними сервисы JobService и UserService (бизнес-логика)
 // - pollApi поместить в JobService (startPolling, stopPolling, poll) 
-class ApiService {
-    constructor(private readonly client: HttpClient) {}
+export class ApiService {
+    constructor(private readonly client: ApiHttpClient) {}
 
     // JOBS
     public getJobsDone(): Promise<JobsReadyDTO> {
@@ -46,13 +45,7 @@ class ApiService {
 
 
     // USER
-    public getUser(id: number): Promise<UserDTO> {
+    public getUserById(id: number): Promise<UserDTO> {
         return this.client.get(`/users/${id}`, userSchemaDTO);
     }
 }
-
-/**
- * Единственный экземпляр ApiService, который используется ботом
- * он создается с единственным экземпляром http клиента.
- */
-export const apiService = new ApiService(_apiHttpClient);

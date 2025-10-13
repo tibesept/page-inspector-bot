@@ -1,0 +1,202 @@
+import { Bot, InputFile } from "grammy";
+import { z } from "zod";
+import { TMyContext } from "#types/state.js";
+import { logger } from "#core/logger.js";
+import { IJobsRepository } from "#repositories/JobsRepository.js";
+import { Job } from "#core/models/Job.js";
+import { jobWorkerResultSchema } from "#api/types.js"; // DTO для результата
+
+/**
+ * Оркестрирует процесс получения и обработки задач из источника данных.
+ */
+export class JobService {
+    private isPolling = false;
+    private timerId: NodeJS.Timeout | null = null;
+
+
+    constructor(
+        private readonly bot: Bot<TMyContext>,
+        private readonly jobsRepository: IJobsRepository,
+        private readonly pollIntervalMs: number,
+    ) {}
+
+    /**
+     * Запускает цикл поллинга для получения новых задач.
+     */
+    public startPolling(): void {
+        if (this.isPolling) {
+            logger.warn("Job polling is already running.");
+            return;
+        }
+
+        logger.info("Starting job polling...");
+        this.isPolling = true;
+        this.poll();
+    }
+
+    /**
+     * Останавливает цикл поллинга.
+     */
+    public stopPolling(): void {
+        if (!this.isPolling) {
+            logger.warn("Job polling is not running.");
+            return;
+        }
+
+        logger.info("Stopping job polling...");
+        this.isPolling = false;
+        if (this.timerId) {
+            clearTimeout(this.timerId);
+        }
+    }
+
+    /**
+     * Основной метод цикла, который получает и обрабатывает задачи.
+     */
+    private async poll(): Promise<void> {
+        if (!this.isPolling) {
+            return; // Выходим, если поллинг был остановлен
+        }
+
+        try {
+            logger.debug("Polling for ready jobs...");
+            const readyJobs = await this.jobsRepository.findReady();
+            logger.debug(`Found ${readyJobs.length} jobs to process.`);
+
+            // Обрабатываем каждую задачу параллельно
+            await Promise.all(readyJobs.map((job) => this.processJob(job)));
+        } catch (error) {
+            logger.error(error, "An error occurred during the polling cycle.");
+        } finally {
+            // Планируем следующий вызов только если сервис все еще активен
+            if (this.isPolling) {
+                this.timerId = setTimeout(
+                    () => this.poll(),
+                    this.pollIntervalMs,
+                );
+            }
+        }
+    }
+
+    /**
+     * Обрабатывает одну задачу: отправляет результат пользователю и обновляет статус.
+     */
+    private async processJob(job: Job): Promise<void> {
+        try {
+            // Валидация данных задачи
+            if (!job.result) {
+                throw new Error(`Job ${job.jobId} has no result data.`);
+            }
+            if (job.status === "failed") {
+                throw new Error(`Job ${job.jobId} has a failed status.`);
+            }
+
+
+            // Формирование сообщения
+            const messageText = this.formatResultMessage(job.result);
+
+            // Отправка фото с результатами
+            await this.bot.api.sendPhoto(
+                job.userId,
+                new InputFile(
+                    Buffer.from(job.result.screenshot, "base64"),
+                    "analysis.jpeg",
+                ),
+                { caption: messageText, parse_mode: "HTML" },
+            );
+
+            // Отправка списка битых ссылок, если они есть
+            if (job.result.brokenLinks.length > 0) {
+                const brokenLinksText = `Найденные битые ссылки:\n${job.result.brokenLinks.map((link) => `- ${link.url}`).join("\n")}`;
+                await this.bot.api.sendMessage(job.userId, brokenLinksText);
+            }
+
+            // Пометка задачи как отправленной
+            await this.jobsRepository.updateStatus(job.jobId);
+            logger.info(
+                `Successfully processed and sent job ${job.jobId} to user ${job.userId}.`,
+            );
+        } catch (error) {
+            logger.error(error, `Failed to process job ${job.jobId}.`);
+            // Если произошла ошибка, уведомляем пользователя и помечаем задачу как 'failed'
+            if (job.userId) {
+                await this.bot.api.sendMessage(
+                    job.userId,
+                    "Возникла непредвиденная ошибка при обработке вашего запроса.",
+                );
+                await this.jobsRepository.updateStatus(
+                    job.jobId,
+                    // "failed",
+                    // (error as Error).message,
+                );
+            }
+        }
+    }
+
+    public async createNewJob(data: { userId: number; url: string }): Promise<Job> {
+        logger.info(`User ${data.userId} requested a new job for URL: ${data.url}`);
+        
+        // TODO:
+        // - Типы задач, глубина
+        // - Проверка, есть ли у пользователя баланс
+        // - Проверка, не создавал ли он такую же задачу 5 минут назад
+        // - Списание денег
+        
+        const jobDataForRepo = {
+            userId: data.userId,
+            url: data.url,
+            type: 0, // Значения по умолчанию теперь живут здесь!
+            depth: 1,
+        };
+        
+        // Делегируем создание репозиторию
+        const createdJob = await this.jobsRepository.createJob(jobDataForRepo);
+                
+
+        return createdJob;
+    }
+
+    /**
+     * Форматирует результат анализа в HTML-сообщение.
+     */
+    private formatResultMessage(
+        result: z.infer<typeof jobWorkerResultSchema>,
+    ): string {
+        const title = result.seo.title
+            ? this.escapeHtml(result.seo.title)
+            : "❌ Не найден";
+        const description = result.seo.description
+            ? this.escapeHtml(result.seo.description)
+            : "❌ Не найдено";
+        const h1 = result.seo.h1
+            ? this.escapeHtml(result.seo.h1)
+            : "❌ Не найден";
+
+        return `
+<b>Результаты SEO-анализа вашего сайта:</b>
+
+🔗 <b>Ссылки:</b>
+ - Всего ссылок: <code>${result.seo.linksCount}</code>
+ - Внутренних: <code>${result.seo.internalLinks}</code>
+ - Внешних: <code>${result.seo.externalLinks}</code>
+ - Битых ссылок: <code>${result.brokenLinks.length}</code>
+
+🔎 <b>SEO-показатели:</b>
+ - title: <code>${title}</code>
+ - description: <code>${description}</code>
+ - Заголовок H1: <code>${h1}</code>
+
+🤖 <b>Файл robots.txt:</b>
+ - Статус: <code>${result.seo.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
+`;
+    }
+
+    private escapeHtml(text: string): string {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+}

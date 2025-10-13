@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "target": "es2020",
-    "module": "commonjs",
+    "module": "nodenext",
     "lib": ["es2020"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -10,7 +10,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "#api/*": ["./src/api/*"],
+      "#bot/*": ["./src/bot/*"],
+      "#core/*": ["./src/core/*"],
+      "#repositories/*": ["./src/repositories/*"],
+      "#services/*": ["./src/services/*"],
+      "#types/*": ["./src/types/*"]
+    }
   },
   "include": ["src/**/*"]
 }

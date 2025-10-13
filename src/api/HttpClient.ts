@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { config } from "../config";
-import { logger } from "../logger";
+import { IAppConfig } from "#core/config.js";
+import { logger } from "#core/logger.js";
 
 /**
  * Отправка HTTP запросов к API
- * Класс не экспортируется, чтобы никто не мог создать второй экземпляр.
  */
-class ApiHttpClient {
+export class ApiHttpClient {
     private readonly baseUrl: string;
     private readonly apiKey: string;
 
-    constructor() {
-        this.baseUrl = config.api.host;
-        this.apiKey = config.api.key;
-        logger.info("ApiHttpClient initialized");
+    constructor(config: IAppConfig['api']) {
+        this.baseUrl = config.host;
+        this.apiKey = config.key;
+        logger.info("HttpClient instance created");
     }
+
 
     public get<T>(path: string, schema: z.ZodSchema<T>): Promise<T> {
         return this.request(path, "GET", schema);
@@ -85,8 +85,3 @@ class ApiHttpClient {
         }
     }
 }
-
-/**
- * Клиент для HTTP запросов к API
- */
-export const _apiHttpClient = new ApiHttpClient();

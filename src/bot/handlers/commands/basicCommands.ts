@@ -1,7 +1,6 @@
 import { Composer } from "grammy";
-import { TMyContext } from "../../types";
-import { EConversations } from "../conversations";
-import { apiService } from "../../ApiService";
+import { TMyContext } from "#types/state.js";
+import { EConversations } from "#bot/handlers/conversations/index.js";
 
 export const basicCommands = new Composer<TMyContext>();
 
@@ -37,6 +36,7 @@ basicCommands.command("inspect", async (ctx) => {
     await ctx.conversation.enter(EConversations.newJob);
 });
 
+
 basicCommands.command("me", async (ctx) => {
     if (!ctx.from?.id) {
         return;
@@ -46,7 +46,7 @@ basicCommands.command("me", async (ctx) => {
 
     // TODO: забор данных о юзере из сессии, без повторного запроса
     // getUser выполняется в middleware и кладет данные в сессию
-    const data = await apiService.getUser(ctx.from.id);
+    const data = await ctx.userService.getUserById(ctx.from.id);
 
     await ctx.reply(`
         Баланс: ${data.balance} С
