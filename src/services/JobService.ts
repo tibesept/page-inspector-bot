@@ -183,6 +183,15 @@ export class JobService {
 ⚡️ <b>Производительность (Lighthouse):</b>
  - <code>Анализ не проводился</code>
 `;
+        let techStackBlock = `💻 <b>Стек технологий:</b>
+ - <code>Не определен</code>
+`;
+
+        if (result.techStack && result.techStack.length > 0) {
+                    techStackBlock = `💻 <b>Стек технологий:</b>
+${result.techStack.map(tech => ` - <code>${this.escapeHtml(tech)}</code>`).join('\n')}
+`;
+        }
 
         return `
 <b>Результаты SEO-анализа вашего сайта:</b>
@@ -201,6 +210,7 @@ export class JobService {
 🤖 <b>Файл robots.txt:</b>
  - Статус: <code>${result.seo.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
 ${lighthouseBlock}
+${techStackBlock}
  `;
     }
 
