@@ -17,11 +17,7 @@ import {
  * Позволяет удобно отправлять HTTP запросы в API
  */
 
-// TODO: РАЗДЕЛЕНИЕ ОТВЕТСТВЕННОСТИ!!!!
-// - Убрать ApiService 
-// - Создать независимые репозитории JobRepository и UserRepository (получение данных из API в нужном формате)
-// - Создать над ними сервисы JobService и UserService (бизнес-логика)
-// - pollApi поместить в JobService (startPolling, stopPolling, poll) 
+
 export class ApiService {
     constructor(private readonly client: ApiHttpClient) {}
 
