@@ -4,7 +4,10 @@ import { TMyContext } from "#types/state.js";
 import { logger } from "#core/logger.js";
 import { IJobsRepository } from "#repositories/JobsRepository.js";
 import { Job } from "#core/models/Job.js";
-import { jobWorkerResultSchema } from "#api/types.js"; // DTO для результата
+import {
+    JobWorkerLighthouseResult,
+    jobWorkerResultSchema,
+} from "#api/types.js"; // DTO для результата
 
 /**
  * Оркестрирует процесс получения и обработки задач из источника данных.
@@ -12,7 +15,6 @@ import { jobWorkerResultSchema } from "#api/types.js"; // DTO для резул�
 export class JobService {
     private isPolling = false;
     private timerId: NodeJS.Timeout | null = null;
-
 
     constructor(
         private readonly bot: Bot<TMyContext>,
@@ -91,7 +93,6 @@ export class JobService {
                 throw new Error(`Job ${job.jobId} has a failed status.`);
             }
 
-
             // Формирование сообщения
             const messageText = this.formatResultMessage(job.result);
 
@@ -133,25 +134,29 @@ export class JobService {
         }
     }
 
-    public async createNewJob(data: { userId: number; url: string }): Promise<Job> {
-        logger.info(`User ${data.userId} requested a new job for URL: ${data.url}`);
-        
+    public async createNewJob(data: {
+        userId: number;
+        url: string;
+    }): Promise<Job> {
+        logger.info(
+            `User ${data.userId} requested a new job for URL: ${data.url}`,
+        );
+
         // TODO:
         // - Типы задач, глубина
         // - Проверка, есть ли у пользователя баланс
         // - Проверка, не создавал ли он такую же задачу 5 минут назад
         // - Списание денег
-        
+
         const jobDataForRepo = {
             userId: data.userId,
             url: data.url,
             type: 0, // Значения по умолчанию теперь живут здесь!
             depth: 1,
         };
-        
+
         // Делегируем создание репозиторию
         const createdJob = await this.jobsRepository.createJob(jobDataForRepo);
-                
 
         return createdJob;
     }
@@ -172,6 +177,13 @@ export class JobService {
             ? this.escapeHtml(result.seo.h1)
             : "❌ Не найден";
 
+        const lighthouseBlock = result.lighthouse
+            ? this.formatLighthouseResult(result.lighthouse)
+            : `
+⚡️ <b>Производительность (Lighthouse):</b>
+ - <code>Анализ не проводился</code>
+`;
+
         return `
 <b>Результаты SEO-анализа вашего сайта:</b>
 
@@ -188,9 +200,54 @@ export class JobService {
 
 🤖 <b>Файл robots.txt:</b>
  - Статус: <code>${result.seo.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
-`;
+${lighthouseBlock}
+ `;
     }
 
+    private formatLighthouseResult(
+        lighthouse: JobWorkerLighthouseResult,
+    ): string {
+        // Хелперы для форматирования метрик
+        const formatScore = (score: number | null) => {
+            if (score === null) return "<code>N/A</code>";
+            const percent = (score * 100).toFixed(0);
+            const emoji = score >= 0.9 ? "🟢" : score >= 0.5 ? "🟡" : "🔴";
+            return `${emoji} <code>${percent}%</code>`;
+        };
+
+        const formatLCP = (ms: number | null) => {
+            if (ms === null) return "<code>N/A</code>";
+            const seconds = (ms / 1000).toFixed(2);
+            const emoji = ms <= 2500 ? "🟢" : ms <= 4000 ? "🟡" : "🔴";
+            return `${emoji} <code>${seconds} с</code>`;
+        };
+
+        const formatCLS = (score: number | null) => {
+            if (score === null) return "<code>N/A</code>";
+            const formatted = score.toFixed(3);
+            const emoji = score <= 0.1 ? "🟢" : score <= 0.25 ? "🟡" : "🔴";
+            return `${emoji} <code>${formatted}</code>`;
+        };
+
+        const formatTBT = (ms: number | null) => {
+            if (ms === null) return "<code>N/A</code>";
+            const emoji = ms <= 200 ? "🟢" : ms <= 600 ? "🟡" : "🔴";
+            return `${emoji} <code>${ms.toFixed(0)} мс</code>`;
+        };
+
+        return `
+⚡️ <b>Производительность (Lighthouse):</b>
+ - Performance: ${formatScore(lighthouse.performance)}
+ - Accessibility: ${formatScore(lighthouse.accessibility)}
+ - Best Practices: ${formatScore(lighthouse.bestPractices)}
+ - SEO: ${formatScore(lighthouse.seo)}
+
+📈 <b>Core Web Vitals:</b>
+ - LCP (Загрузка): ${formatLCP(lighthouse.lcp)}
+ - CLS (Стабильность): ${formatCLS(lighthouse.cls)}
+ - TBT (Интерактивность): ${formatTBT(lighthouse.tbt)}
+`;
+    }
     private escapeHtml(text: string): string {
         return text
             .replace(/&/g, "&amp;")
