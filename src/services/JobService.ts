@@ -1,12 +1,14 @@
 import { Bot, InputFile } from "grammy";
 import { z } from "zod";
-import { TMyContext } from "#types/state.js";
+import { IAnalyzerSettings, TMyContext } from "#types/state.js";
 import { logger } from "#core/logger.js";
 import { IJobsRepository } from "#repositories/JobsRepository.js";
 import { Job } from "#core/models/Job.js";
 import {
+    JobAnalyzerSettingsDB,
     JobWorkerLighthouseResult,
     jobWorkerResultSchema,
+    JobWorkerSeoResult,
 } from "#api/types.js"; // DTO для результата
 
 /**
@@ -107,8 +109,10 @@ export class JobService {
             );
 
             // Отправка списка битых ссылок, если они есть
-            if (job.result.brokenLinks.length > 0) {
-                const brokenLinksText = `Найденные битые ссылки:\n${job.result.brokenLinks.map((link) => `- ${link.url}`).join("\n")}`;
+
+            let brokenLinksText = "";
+            if (job.result.seo?.brokenLinks?.length) {
+                brokenLinksText = `Найденные битые ссылки:\n${job.result.seo.brokenLinks.map((link) => `- ${link.url}`).join("\n")}`;
                 await this.bot.api.sendMessage(job.userId, brokenLinksText);
             }
 
@@ -137,6 +141,7 @@ export class JobService {
     public async createNewJob(data: {
         userId: number;
         url: string;
+        analyzerSettings: IAnalyzerSettings;
     }): Promise<Job> {
         logger.info(
             `User ${data.userId} requested a new job for URL: ${data.url}`,
@@ -151,9 +156,15 @@ export class JobService {
         const jobDataForRepo = {
             userId: data.userId,
             url: data.url,
-            type: 0, // Значения по умолчанию теперь живут здесь!
-            depth: 1,
-        };
+            type: 1,
+            settings: {
+                depth: 1, // TODO: depth
+                seo: data.analyzerSettings.seo,
+                lighthouse: data.analyzerSettings.lighthouse,
+                links: data.analyzerSettings.links,
+                techstack: data.analyzerSettings.techstack
+            }
+        }
 
         // Делегируем создание репозиторию
         const createdJob = await this.jobsRepository.createJob(jobDataForRepo);
@@ -167,15 +178,11 @@ export class JobService {
     private formatResultMessage(
         result: z.infer<typeof jobWorkerResultSchema>,
     ): string {
-        const title = result.seo.title
-            ? this.escapeHtml(result.seo.title)
-            : "❌ Не найден";
-        const description = result.seo.description
-            ? this.escapeHtml(result.seo.description)
-            : "❌ Не найдено";
-        const h1 = result.seo.h1
-            ? this.escapeHtml(result.seo.h1)
-            : "❌ Не найден";
+
+        const seoBlock = result.seo ? this.formatSeoResult(result.seo) : `
+🔎 <b>SEO-показатели:</b>
+ - <code>Анализ не проводился</code>
+`;
 
         const lighthouseBlock = result.lighthouse
             ? this.formatLighthouseResult(result.lighthouse)
@@ -188,27 +195,16 @@ export class JobService {
 `;
 
         if (result.techStack && result.techStack.length > 0) {
-                    techStackBlock = `💻 <b>Стек технологий:</b>
-${result.techStack.map(tech => ` - <code>${this.escapeHtml(tech)}</code>`).join('\n')}
+            techStackBlock = `💻 <b>Стек технологий:</b>
+${result.techStack.map((tech) => ` - <code>${this.escapeHtml(tech)}</code>`).join("\n")}
 `;
         }
 
         return `
-<b>Результаты SEO-анализа вашего сайта:</b>
-
-🔗 <b>Ссылки:</b>
- - Всего ссылок: <code>${result.seo.linksCount}</code>
- - Внутренних: <code>${result.seo.internalLinks}</code>
- - Внешних: <code>${result.seo.externalLinks}</code>
- - Битых ссылок: <code>${result.brokenLinks.length}</code>
-
-🔎 <b>SEO-показатели:</b>
- - title: <code>${title}</code>
- - description: <code>${description}</code>
- - Заголовок H1: <code>${h1}</code>
-
+<b>Результаты анализа вашего сайта:</b>
+${seoBlock}
 🤖 <b>Файл robots.txt:</b>
- - Статус: <code>${result.seo.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
+ - Статус: <code>${result.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
 ${lighthouseBlock}
 ${techStackBlock}
  `;
@@ -258,6 +254,28 @@ ${techStackBlock}
  - TBT (Интерактивность): ${formatTBT(lighthouse.tbt)}
 `;
     }
+
+    private formatSeoResult(seo: JobWorkerSeoResult): string {
+        if (!seo) {
+            return "";
+        }
+
+        const title = seo.title ? this.escapeHtml(seo.title) : "❌ Не найден";
+        const description = seo.description
+            ? this.escapeHtml(seo.description)
+            : "❌ Не найдено";
+        const h1 = seo.h1 ? this.escapeHtml(seo.h1) : "❌ Не найден";
+        const brokenLinks = seo.brokenLinks?.length ? seo.brokenLinks?.length : 'Анализ не проводился';
+
+        return `
+🔎 <b>SEO-показатели:</b>
+ - title: <code>${title}</code>
+ - description: <code>${description}</code>
+ - Заголовок H1: <code>${h1}</code>
+ - Битых ссылок: <code>${brokenLinks}</code>
+`;
+    }
+
     private escapeHtml(text: string): string {
         return text
             .replace(/&/g, "&amp;")
