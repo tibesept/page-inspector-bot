@@ -1,7 +1,8 @@
 
 const enum Emoji {
     yes = "✅",
-    no = "❌"
+    no = "❌",
+    gear = "⚙️"
 }
 
 export default Emoji;
