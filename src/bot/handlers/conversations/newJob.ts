@@ -3,7 +3,6 @@ import { logger } from "#core/logger.js";
 import { TMyContext } from "#types/state.js";
 import { Context } from "grammy";
 import {
-    createCancelMenu,
     createMainMenu,
 } from "#bot/menu/conversationMenus.js";
 import { getSettingsText } from "#bot/menu/helpers.js";
@@ -19,20 +18,6 @@ export async function newJob(
 ) {
     let url: string | undefined = userUrl;
 
-    const cancelMenu = createCancelMenu(conversation);
-
-    if (!url) {
-        const botMessage = await ctx.reply(
-            "Отправьте ссылку на страницу. Она обязательно должна начинаться с протокола HTTP/HTTPS", 
-            { reply_markup: cancelMenu }
-        );
-        const { message } = await conversation.waitForHears(RegexURL, {
-            otherwise: (ctx) => ctx.reply("Ссылка в некорректном формате", { reply_markup: cancelMenu }),
-        });
-        url = message?.text;
-        
-        await ctx.api.deleteMessage(botMessage.chat.id, botMessage.message_id);
-    }
 
     if (!url || !ctx.from?.id) {
         logger.warn(`invalid url or ctx.from.id: ${url} \n ${ctx.from?.id}`);
@@ -58,7 +43,7 @@ export async function newJob(
         (ctx) => ctx.callbackQuery !== undefined,
         {
             otherwise: async (ctx) => {
-                ctx.api.deleteMessage(preRunMessage.chat.id, preRunMessage.message_id);
+                await ctx.api.deleteMessage(preRunMessage.chat.id, preRunMessage.message_id);
                 await ctx.reply("Операция отменена!");
                 conversation.halt();
             }
