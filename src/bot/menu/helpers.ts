@@ -14,6 +14,7 @@ export const settingToggles: ISettingsToggle[] = [
 
     { label: "Аудит LightHouse", key: "lighthouse" },
     { label: "Стек технологий", key: "techstack" },
+    { label: "Резюме от ИИ", key: "ai_summary" },
 ];
 
 
