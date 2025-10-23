@@ -3,6 +3,7 @@ import { Conversation, ConversationMenu } from "@grammyjs/conversations";
 import { Context } from "grammy";
 import { getSettingsText, settingToggles } from "./helpers.js";
 import Emoji from "#bot/emoji.js";
+import { logger } from "#core/logger.js";
 
 // ----- PRE JOB SETTINGS ---- 
 export function createSettingsMenu(
@@ -70,32 +71,21 @@ export function createMainMenu(
                     userId: ctx.from.id,
                     url: url,
                     analyzerSettings: settingsBuffer,
-                }).catch(() => ctx.reply("Что-то пошло не так."));
+                }).catch((err) => {
+                    ctx.reply("Что-то пошло не так.");
+                    logger.error(err, "error creating new job");
+                });
             });
+            conversation.halt() // выходим из conversation
         });
 
     const settings = createSettingsMenu(conversation, settingsBuffer, main);
     
     main.submenu("Настройки", settings);
     main.row().text("Отмена", async (ctx) => {
-        ctx.deleteMessage();
+        await ctx.deleteMessage();
         await ctx.reply("Операция отменена!");
         conversation.halt()
     })
-    return main;
-}
-
-
-// ----- CANCEL MENU -----
-export function createCancelMenu(
-    conversation: Conversation<Context, TMyContext>,
-) {
-    const main = conversation.menu("root-menu")
-        .text("Отмена", async (ctx) => { 
-            ctx.deleteMessage();
-            await ctx.reply("Операция отменена!");
-            conversation.halt();
-        });
-
     return main;
 }
