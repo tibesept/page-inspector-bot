@@ -1,9 +1,20 @@
 import { Context } from "grammy";
-import { ELanguages, ISessionData } from "#types/state.js";
+import { ELanguages, IAnalyzerSettings, ISessionData } from "#types/state.js";
+import { fa } from "zod/locales";
+
+export const defaultAnalyzerSettings: IAnalyzerSettings = {
+    links: false,
+    seo: true,
+    lighthouse: false,
+    techstack: true,
+};
 
 export function initial(): ISessionData {
     return {
         language: ELanguages.en,
+        currentUrl: null,
+        analyzerSettingsBuffer: defaultAnalyzerSettings,
+        analyzerSettings: defaultAnalyzerSettings
     };
 }
 
