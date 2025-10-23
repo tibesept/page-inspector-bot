@@ -27,13 +27,10 @@ basicCommands.command("start", async (ctx) => {
 - Полный отчет в формате PDF
 - Краткое резюме от ИИ (DeepSeek API) об основных ошибках и возможных исправлениях
 
-Пока что частично реализован бесплатный анализ:
-Команда /inspect
-`);
-});
+На данный момент реализовано не всё, что хотелось бы. 
 
-basicCommands.command("inspect", async (ctx) => {
-    await ctx.conversation.enter(EConversations.newJob, ctx.match);
+Для анализа просто отправьте ссылку (http/https).
+`);
 });
 
 
@@ -52,3 +49,17 @@ basicCommands.command("me", async (ctx) => {
         Баланс: ${data.balance} С
     `);
 });
+
+basicCommands.on("message:entities:url", async (ctx) => {
+    const text = ctx.message.text;
+    const urls = ctx.msg.entities
+      ?.filter(entity => entity.type === "url")
+      .map(entity => text.substring(entity.offset, entity.offset + entity.length));
+
+    if(!urls[0]?.toLowerCase()?.startsWith("http")) {
+        await ctx.reply("Ссылка должна начинаться с протокола http или https.")
+        return;
+    }
+
+    await ctx.conversation.enter(EConversations.newJob, urls[0]);
+})
