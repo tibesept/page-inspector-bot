@@ -3,12 +3,15 @@ import { IAnalyzerSettings } from "#types/state.js";
 
 export interface ISettingsToggle {
     label: string;
-    key: keyof IAnalyzerSettings
+    key: keyof IAnalyzerSettings,
+    parent?: keyof IAnalyzerSettings,
+    child?: keyof IAnalyzerSettings
 }
 
 export const settingToggles: ISettingsToggle[] = [
-    { label: "Битые ссылки", key: "links" },
-    { label: "SEO-анализ", key: "seo" },
+    { label: "SEO-анализ", key: "seo", child: "links" },
+    { label: "SEO: Битые ссылки", key: "links", parent: "seo" },
+
     { label: "Аудит LightHouse", key: "lighthouse" },
     { label: "Стек технологий", key: "techstack" },
 ];

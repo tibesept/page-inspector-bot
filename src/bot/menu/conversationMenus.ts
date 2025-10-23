@@ -15,8 +15,17 @@ export function createSettingsMenu(
         .dynamic((ctx, range) => {
             settingToggles.forEach((toggle) => { // создаем чекбоксы (toggles)
                 range.text(
-                    () => `${toggle.label}: ${settingsBuffer[toggle.key] ? Emoji.yes : Emoji.no}`,
-                    async (ctx) => {
+                    () => `${toggle.label}: ${settingsBuffer[toggle.key] ? Emoji.yes : Emoji.no}`, // текст чекбокса
+                    async (ctx) => { // логика нажатия на чекбокс
+                        // если настройка включается и у нее есть зависимая настройка, то включаем зависимую. 
+                        if(toggle.parent && !settingsBuffer[toggle.key]) { 
+                            settingsBuffer[toggle.parent] = true;
+                        }
+                        // если настройка выключается и у нее есть опциональная поднастройка, то ее тоже выключаем 
+                        if(toggle.child && settingsBuffer[toggle.key]) {
+                            settingsBuffer[toggle.child] = false;
+                        }
+
                         settingsBuffer[toggle.key] = !settingsBuffer[toggle.key];
                         ctx.menu.update();
                     },
@@ -50,7 +59,7 @@ export function createMainMenu(
     settingsBuffer: IAnalyzerSettings
 ) {
     const main = conversation.menu("root-menu")
-        .text("Запуск!", async (ctx) => {
+        .text("Запуск!", async (ctx) => { 
             await ctx.deleteMessage();
             await ctx.reply("Ожидайте...");
 
@@ -68,6 +77,6 @@ export function createMainMenu(
     const settings = createSettingsMenu(conversation, settingsBuffer, main);
     
     main.submenu("Настройки", settings);
-    
+
     return main;
 }
