@@ -3,7 +3,7 @@ import { z } from "zod";
 import { IAnalyzerSettings, TMyContext } from "#types/state.js";
 import { logger } from "#core/logger.js";
 import { IJobsRepository } from "#repositories/JobsRepository.js";
-import { Job } from "#core/models/Job.js";
+import { AiSummary, Job, Ready } from "#core/models/Job.js";
 import {
     JobAnalyzerSettingsDB,
     JobWorkerLighthouseResult,
@@ -64,11 +64,9 @@ export class JobService {
 
         try {
             logger.debug("Polling for ready jobs...");
-            const readyJobs = await this.jobsRepository.findReady();
-            logger.debug(`Found ${readyJobs.length} jobs to process.`);
-
-            // Обрабатываем каждую задачу параллельно
-            await Promise.all(readyJobs.map((job) => this.processJob(job)));
+            const ready = await this.jobsRepository.findReady();
+            await this.processReady(ready);
+            
         } catch (error) {
             logger.error(error, "An error occurred during the polling cycle.");
         } finally {
@@ -77,6 +75,50 @@ export class JobService {
                 this.timerId = setTimeout(
                     () => this.poll(),
                     this.pollIntervalMs,
+                );
+            }
+        }
+    }
+
+    private async processReady(ready: Ready) {
+        logger.debug(`Found ${ready.readyJobs.length} jobs to process.`);
+
+        // ready jobs
+        await Promise.all(ready.readyJobs.map((job) => this.processJob(job)));
+
+        // ready summaries
+        await Promise.all(ready.readySummaries.map((summary) => {
+            this.processSummary(summary);
+        }))
+
+    }
+
+    /**
+     * Обрабатывает одну задачу: отправляет резюме от ИИ пользователю и обновляет статус.
+     */
+    private async processSummary(summary: AiSummary) {
+        try {
+            if(!summary.jobId || !summary.userId) {
+                throw new Error(`Summary id invalid. jobId: ${summary.jobId} | userId: ${summary.jobId}`);
+            }
+            
+
+            await this.bot.api.sendMessage(summary.userId, `🤖 <b>Резюме от ИИ</b>\n- URL: ${summary.url}\n\n${summary.ai_summary}`, { parse_mode: "HTML" });
+            await this.jobsRepository.updateStatus(summary.jobId, "summary_sent")
+
+        } catch(err) {
+            logger.error(err, `Failed to process summary: ${summary}.`);
+            if (summary.userId) {
+                await this.bot.api.sendMessage(
+                    summary.userId,
+                    `Возникла непредвиденная ошибка при обработке вашего запроса. Номер задачи: ${summary.jobId}`,
+                );
+            }
+            if(summary.jobId) {
+                await this.jobsRepository.updateStatus(
+                    summary.jobId,
+                    "failed",
+                    // (error as Error).message,
                 );
             }
         }
@@ -98,7 +140,7 @@ export class JobService {
             // Формирование сообщения
             const messageText = this.formatResultMessage(job.result);
 
-            // Отправка фото с результатами
+            // -- Отправка РЕЗУЛЬТАТОВ + ФОТО --
             await this.bot.api.sendPhoto(
                 job.userId,
                 new InputFile(
@@ -109,17 +151,38 @@ export class JobService {
             );
 
             // Отправка списка битых ссылок, если они есть
-
             let brokenLinksText = "";
             if (job.result.seo?.brokenLinks?.length) {
                 brokenLinksText = `Найденные битые ссылки:\n${job.result.seo.brokenLinks.map((link) => `- ${link.url}`).join("\n")}`;
                 await this.bot.api.sendMessage(job.userId, brokenLinksText);
             }
 
+            let summarySent = false;
+            if(job.settings?.ai_summary) {
+                const msg = await this.bot.api.sendMessage(
+                    job.userId,
+                    "Получение резюме от ИИ...",
+                )
+                await this.bot.api.sendChatAction(job.userId, "typing");
+
+                if(job.ai_summary && job.url) { // если ВДРУГ резюме УЖЕ готово.
+                    await this.bot.api.deleteMessage(msg.chat.id, msg.message_id);
+                    await this.processSummary({
+                        jobId: job.jobId,
+                        userId: job.userId,
+                        url: job.url,
+                        ai_summary: job.ai_summary
+                    });
+                    summarySent = true;
+                }
+            }
+
+            if(!summarySent) {
+                await this.jobsRepository.updateStatus(job.jobId, "sent");
+            }
             // Пометка задачи как отправленной
-            await this.jobsRepository.updateStatus(job.jobId);
             logger.info(
-                `Successfully processed and sent job ${job.jobId} to user ${job.userId}.`,
+                `Successfully processed and sent job ${job.jobId} to user ${job.userId}.${summarySent ? ' + Summary sent!' : ''}`,
             );
         } catch (error) {
             logger.error(error, `Failed to process job ${job.jobId}.`);
@@ -127,11 +190,11 @@ export class JobService {
             if (job.userId) {
                 await this.bot.api.sendMessage(
                     job.userId,
-                    "Возникла непредвиденная ошибка при обработке вашего запроса.",
+                    `Возникла непредвиденная ошибка при обработке вашего запроса. Номер задачи: ${job.jobId}`,
                 );
                 await this.jobsRepository.updateStatus(
                     job.jobId,
-                    // "failed",
+                    "failed",
                     // (error as Error).message,
                 );
             }
@@ -162,7 +225,8 @@ export class JobService {
                 seo: data.analyzerSettings.seo,
                 lighthouse: data.analyzerSettings.lighthouse,
                 links: data.analyzerSettings.links,
-                techstack: data.analyzerSettings.techstack
+                techstack: data.analyzerSettings.techstack,
+                ai_summary: data.analyzerSettings.ai_summary
             }
         }
 

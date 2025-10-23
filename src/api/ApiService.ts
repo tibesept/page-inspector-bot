@@ -8,6 +8,8 @@ import {
     JobsReadyDTO,
     jobsReadySchemaDTO,
     postJobSchemaDTO,
+    UpdateJobStatusBody,
+    updateJobStatusBodySchema,
     UserDTO,
     userSchemaDTO,
 } from "#api/types.js";
@@ -35,8 +37,11 @@ export class ApiService {
         return this.client.post("/jobs", body, postJobSchemaDTO);
     }
 
-    public markJobAsSent(id: number): Promise<CreateJobDTO> {
-        return this.client.put(`/jobs/sent/${id}`, {}, postJobSchemaDTO);
+    public updateJobStatus(id: number, status: string): Promise<CreateJobDTO> {
+        const body: UpdateJobStatusBody = updateJobStatusBodySchema.parse({
+            status: status
+        });
+        return this.client.put(`/jobs/status/${id}`, body, postJobSchemaDTO);
     }
 
 

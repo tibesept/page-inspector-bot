@@ -1,13 +1,14 @@
 import { ApiService } from "#api/ApiService.js";
-import { CreateJobParams, Job, JobStatus } from "#core/models/Job.js";
+import { AiSummary, CreateJobParams, Job, JobStatus, Ready } from "#core/models/Job.js";
 import { CreateJobDTO, JobDTO, jobSchemaDTO, JobsReadyDTO, jobWorkerResultSchema } from "#api/types.js";
 import { logger } from "#core/logger.js";
+import { Sticker } from "grammy/types";
 
 export interface IJobsRepository {
     createJob(data: CreateJobParams): Promise<Job>; 
-    findReady(): Promise<Job[]>;
+    findReady(): Promise<Ready>;
     findById(id: number): Promise<Job | null>;
-    updateStatus(id: number /*status: JobStatus*/): Promise<void>; // Обновляет статус задачи
+    updateStatus(id: number, status: JobStatus): Promise<void>; // Обновляет статус задачи
 }
 
 export class JobsRepository implements IJobsRepository {
@@ -23,19 +24,26 @@ export class JobsRepository implements IJobsRepository {
         return this.mapPostDtoToModel(dto);
     }
 
-    public async findReadyIds(): Promise<number[]> {
-        const readyJobsDTO = await this.apiService.getJobsDone();
-        return readyJobsDTO.map((job) => job.jobId);
-    }
-
-    public async findReady(): Promise<Job[]> {
-        const readyJobIds = await this.findReadyIds();
+    public async findReady(): Promise<Ready> {
+        const ready = await this.apiService.getJobsDone()
         // Для каждого ID получаем полную информацию о задаче
-        const jobs = await Promise.all(
-            readyJobIds.map((id) => this.findById(id)),
-        );
-        // Отфильтровываем те, которые по какой-то причине не удалось получить
-        return jobs.filter((job): job is Job => job !== null);
+        const jobs: Job[] = (await Promise.all(
+            ready.readyJobs.map((job) => this.findById(job.jobId)),
+        )).filter((job): job is Job => job !== null);
+    
+        const summaries: AiSummary[] = ready.readySummaries.map(summary => {
+            return {
+                jobId: summary.jobId,
+                userId: summary.userId,
+                url: summary.url,
+                ai_summary: summary.ai_summary
+            }
+        })
+
+        return {
+            readyJobs: jobs,
+            readySummaries: summaries
+        };
     }
 
     public async findById(id: number): Promise<Job | null> {
@@ -47,13 +55,9 @@ export class JobsRepository implements IJobsRepository {
         return this.mapGetDtoToModel(dto);
     }
 
-    // TODO: обновление статуса должно принимать статус
-    public async updateStatus(id: number): Promise<void> {
-        await this.apiService.markJobAsSent(id);
+    public async updateStatus(id: number, status: string): Promise<void> {
+        await this.apiService.updateJobStatus(id, status);
     }
-
-
-
 
 
     private mapGetDtoToModel(dto: JobDTO): Job {
@@ -67,6 +71,14 @@ export class JobsRepository implements IJobsRepository {
             status: dto.status as JobStatus,
             // Парсим JSON-строку. Если она пустая или некорректная, возвращаем null.
             result: dto.result ? jobWorkerResultSchema.parse(JSON.parse(dto.result)) : null,
+            ai_summary: dto.ai_summary || null,
+            settings: {
+                ai_summary: dto.settings.ai_summary,
+                techstack: dto.settings.techstack,
+                links: dto.settings.links,
+                seo: dto.settings.seo,
+                lighthouse: dto.settings.lighthouse
+            }
         };
     }
 
@@ -81,6 +93,8 @@ export class JobsRepository implements IJobsRepository {
             status: dto.status as JobStatus,
             // Парсим JSON-строку. Если она пустая или некорректная, возвращаем null.
             result: null,
+            ai_summary: null,
+            settings: null
         };
     }
 }

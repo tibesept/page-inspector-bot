@@ -13,6 +13,7 @@ export interface IAnalyzerSettings {
     seo: boolean;
     lighthouse: boolean;
     techstack: boolean;
+    ai_summary: boolean;
 }
 export interface ISessionData {
     language: ELanguages;
