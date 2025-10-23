@@ -18,7 +18,7 @@ export class JobsRepository implements IJobsRepository {
             userId: data.userId,
             url: data.url,
             type: data.type,
-            depth: data.depth,
+            settings: data.settings
         });
         return this.mapPostDtoToModel(dto);
     }

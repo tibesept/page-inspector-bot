@@ -1,4 +1,5 @@
 import { JobWorkerResultDTO } from "#api/types.js"; // Мы можем переиспользовать тип результата
+import { IAnalyzerSettings } from "#types/state.js";
 
 export type JobStatus = "pending" | "processing" | "completed" | "sent" | "failed";
 
@@ -23,5 +24,11 @@ export interface CreateJobParams {
     userId: number;
     url: string;
     type: number;
-    depth: number;
+    settings: {
+        depth: number;
+        links: boolean;
+        seo: boolean;
+        lighthouse: boolean;
+        techstack: boolean;
+    };
 }
