@@ -7,6 +7,7 @@ export const defaultAnalyzerSettings: IAnalyzerSettings = {
     seo: true,
     lighthouse: false,
     techstack: true,
+    ai_summary: false
 };
 
 export function initial(): ISessionData {
