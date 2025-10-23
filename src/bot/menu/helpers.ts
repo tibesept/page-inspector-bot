@@ -10,7 +10,7 @@ export interface ISettingsToggle {
 
 export const settingToggles: ISettingsToggle[] = [
     { label: "SEO-анализ", key: "seo", child: "links" },
-    { label: "SEO: Битые ссылки", key: "links", parent: "seo" },
+    { label: "SEO: битые ссылки", key: "links", parent: "seo" },
 
     { label: "Аудит LightHouse", key: "lighthouse" },
     { label: "Стек технологий", key: "techstack" },
@@ -18,7 +18,7 @@ export const settingToggles: ISettingsToggle[] = [
 
 
 export function getSettingsText(analyzerSettings: IAnalyzerSettings): string {
-    return `Текущие настройки:\n${settingToggles
+    return `${Emoji.gear} <b>Текущие настройки</b>:\n\n${settingToggles
         .map(
             (i) =>
                 ` - <b>${i.label}</b>: ${analyzerSettings[i.key] ? Emoji.yes : Emoji.no}`,
