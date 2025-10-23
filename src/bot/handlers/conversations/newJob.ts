@@ -2,9 +2,14 @@ import { Conversation } from "@grammyjs/conversations";
 import { logger } from "#core/logger.js";
 import { TMyContext } from "#types/state.js";
 import { Context } from "grammy";
+import {
+    createMainMenu,
+} from "#bot/menu/conversationMenus.js";
+import { getSettingsText } from "#bot/menu/helpers.js";
 
 const RegexURL =
     /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
+
 
 export async function newJob(
     conversation: Conversation<Context, TMyContext>,
@@ -14,7 +19,6 @@ export async function newJob(
     let url: string | undefined = userUrl;
 
     if (!url) {
-        // get url if not provided
         const botMessage = await ctx.reply(
             "Отправьте ссылку на страницу. Она обязательно должна начинаться с протокола HTTP/HTTPS",
         );
@@ -22,9 +26,7 @@ export async function newJob(
             otherwise: (ctx) => ctx.reply("Ссылка в некорректном формате"),
         });
         url = message?.text;
-
-        logger.debug(`got url: ${url}`);
-
+        
         await ctx.api.deleteMessage(botMessage.chat.id, botMessage.message_id);
     }
 
@@ -33,10 +35,18 @@ export async function newJob(
         return;
     }
 
-    await ctx.api.sendChatAction(ctx?.chatId || 0, "typing"); // печатает
+    // ===== MENU =====
+    
+    // читаем сессию. ТОЛЬКО ТАК !!!
+    const session = await conversation.external((ctx: TMyContext) => ctx.session);
+    const settingsBuffer = { ...session.analyzerSettings };
 
-    await ctx.jobService.createNewJob({
-        userId: ctx.from?.id,
-        url: url,
+    const main = createMainMenu(conversation, url, settingsBuffer);
+
+    await ctx.reply(getSettingsText(settingsBuffer), {
+        reply_markup: main,
+        parse_mode: "HTML",
     });
+
+    await conversation.wait(); // обязательно. Иначе меню не будет работать
 }
