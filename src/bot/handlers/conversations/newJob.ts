@@ -47,10 +47,21 @@ export async function newJob(
 
     const main = createMainMenu(conversation, url, settingsBuffer);
 
-    await ctx.reply(getSettingsText(settingsBuffer), {
+    const preRunMessage = await ctx.reply(getSettingsText(settingsBuffer), {
         reply_markup: main,
         parse_mode: "HTML",
     });
 
-    await conversation.wait(); // обязательно. Иначе меню не будет работать
+    // ждем ТОЛЬКО callback_query от меню
+    // если придет текст/фото/любое другое сообщение - выход из диалога
+    await conversation.waitUntil(
+        (ctx) => ctx.callbackQuery !== undefined,
+        {
+            otherwise: async (ctx) => {
+                ctx.api.deleteMessage(preRunMessage.chat.id, preRunMessage.message_id);
+                await ctx.reply("Операция отменена!");
+                conversation.halt();
+            }
+        }
+    );
 }
