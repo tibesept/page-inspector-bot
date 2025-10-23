@@ -77,6 +77,25 @@ export function createMainMenu(
     const settings = createSettingsMenu(conversation, settingsBuffer, main);
     
     main.submenu("Настройки", settings);
+    main.row().text("Отмена", async (ctx) => {
+        ctx.deleteMessage();
+        await ctx.reply("Операция отменена!");
+        conversation.halt()
+    })
+    return main;
+}
+
+
+// ----- CANCEL MENU -----
+export function createCancelMenu(
+    conversation: Conversation<Context, TMyContext>,
+) {
+    const main = conversation.menu("root-menu")
+        .text("Отмена", async (ctx) => { 
+            ctx.deleteMessage();
+            await ctx.reply("Операция отменена!");
+            conversation.halt();
+        });
 
     return main;
 }
