@@ -329,7 +329,7 @@ ${techStackBlock}
             ? this.escapeHtml(seo.description)
             : "❌ Не найдено";
         const h1 = seo.h1 ? this.escapeHtml(seo.h1) : "❌ Не найден";
-        const brokenLinks = seo.brokenLinks?.length ? seo.brokenLinks?.length : 'Анализ не проводился';
+        const brokenLinks = (seo.brokenLinks?.length || seo.brokenLinks?.length === 0) ? seo.brokenLinks.length : 'Анализ не проводился';
 
         return `
 🔎 <b>SEO-показатели:</b>
