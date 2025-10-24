@@ -329,14 +329,24 @@ ${techStackBlock}
             ? this.escapeHtml(seo.description)
             : "❌ Не найдено";
         const h1 = seo.h1 ? this.escapeHtml(seo.h1) : "❌ Не найден";
-        const brokenLinks = (seo.brokenLinks?.length || seo.brokenLinks?.length === 0) ? seo.brokenLinks.length : 'Анализ не проводился';
+        const brokenLinks = (seo.brokenLinks?.length != null) 
+            ? ` - Битых ссылок: <code>${seo.brokenLinks?.length}</code>` 
+            : '';
+        const externalLinks = seo.externalLinks ?? 'Анализ не проводился';
+        const internalLinks = seo.internalLinks ?? 'Анализ не проводился';
+        const linksCount = seo.linksCount ?? 'Анализ не проводился';
 
         return `
 🔎 <b>SEO-показатели:</b>
  - title: <code>${title}</code>
  - description: <code>${description}</code>
  - Заголовок H1: <code>${h1}</code>
- - Битых ссылок: <code>${brokenLinks}</code>
+
+🔗 <b>Ссылки:</b>
+ - Всего: <code>${linksCount}</code>
+ - Внешних: <code>${externalLinks}</code>
+ - Внутренних: <code>${internalLinks}</code>
+${brokenLinks}
 `;
     }
 
