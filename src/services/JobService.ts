@@ -11,6 +11,16 @@ import {
     JobWorkerSeoResult,
 } from "#api/types.js"; // DTO для результата
 
+const sanitizeHtml = (str: string) => 
+            str.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               // возвращаем нужные html
+               .replace(/&lt;b&gt;/gi, '<b>')
+                .replace(/&lt;\/b&gt;/gi, '</b>')
+                .replace(/&lt;i&gt;/gi, '<i>')
+                .replace(/&lt;\/i&gt;/gi, '</i>');
+
 /**
  * Оркестрирует процесс получения и обработки задач из источника данных.
  */
@@ -102,8 +112,10 @@ export class JobService {
                 throw new Error(`Summary id invalid. jobId: ${summary.jobId} | userId: ${summary.jobId}`);
             }
             
-
-            await this.bot.api.sendMessage(summary.userId, `🤖 <b>Резюме от ИИ</b>\n- URL: ${summary.url}\n\n${summary.ai_summary}`, { parse_mode: "HTML" });
+            const safeUrl = summary.url.replace(/&/g, '&amp;');
+            const safeSummary = sanitizeHtml(summary.ai_summary);;
+            const message = `🤖 <b>Резюме от ИИ</b>\n- URL: ${safeUrl}\n\n${safeSummary}`;
+            await this.bot.api.sendMessage(summary.userId, message, { parse_mode: "HTML" });
             await this.jobsRepository.updateStatus(summary.jobId, "summary_sent")
 
         } catch(err) {
@@ -225,7 +237,8 @@ export class JobService {
                 seo: data.analyzerSettings.seo,
                 lighthouse: data.analyzerSettings.lighthouse,
                 links: data.analyzerSettings.links,
-                techstack: data.analyzerSettings.techstack,
+                // FIXME: хардкод, т.к. функция не реализована до конца (fix/disable-techstack-feature)
+                techstack: false, // data.analyzerSettings.techstack,
                 ai_summary: data.analyzerSettings.ai_summary
             }
         }
@@ -254,9 +267,7 @@ export class JobService {
 ⚡️ <b>Производительность (Lighthouse):</b>
  - <code>Анализ не проводился</code>
 `;
-        let techStackBlock = `💻 <b>Стек технологий:</b>
- - <code>Не определен</code>
-`;
+        let techStackBlock = ``;
 
         if (result.techStack && result.techStack.length > 0) {
             techStackBlock = `💻 <b>Стек технологий:</b>
