@@ -1,12 +1,11 @@
 import { Context } from "grammy";
 import { ELanguages, IAnalyzerSettings, ISessionData } from "#types/state.js";
-import { fa } from "zod/locales";
 
 export const defaultAnalyzerSettings: IAnalyzerSettings = {
     links: false,
     seo: true,
     lighthouse: false,
-    techstack: true,
+    techstack: false,
     ai_summary: false
 };
 
