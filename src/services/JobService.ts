@@ -226,7 +226,7 @@ export class JobService {
         // - Типы задач, глубина
         // - Проверка, есть ли у пользователя баланс
         // - Проверка, не создавал ли он такую же задачу 5 минут назад
-        // - Списание денег
+        // - Списание денег (только после выполнения джобы. Если один из пунктов провалился - за него деньги не берем)
 
         const jobDataForRepo = {
             userId: data.userId,
@@ -256,17 +256,18 @@ export class JobService {
         result: z.infer<typeof jobWorkerResultSchema>,
     ): string {
 
-        const seoBlock = result.seo ? this.formatSeoResult(result.seo) : `
-🔎 <b>SEO-показатели:</b>
- - <code>Анализ не проводился</code>
-`;
+        // status - 200 / 404 / etc
+        const statusInfo = result.status ? this.formatStatusResult(result.status) : {showLighthouse: true, text: `Неизвестно (сообщите разработчику)`};
 
-        const lighthouseBlock = result.lighthouse
-            ? this.formatLighthouseResult(result.lighthouse)
-            : `
-⚡️ <b>Производительность (Lighthouse):</b>
- - <code>Анализ не проводился</code>
-`;
+        const seoBlock = this.formatSeoResult(result.seo ?? null);
+
+        let lighthouseBlock = this.formatLighthouseResult(result.lighthouse ?? null);
+
+        // lighthouse иногда не проводится при 4xx/5xx ошибках, так что уточняем для юзера
+        if(lighthouseBlock.includes("не проводился") && !statusInfo.showLighthouse) {
+            lighthouseBlock = `\n⚡️ <b>Производительность (Lighthouse):</b>\n - <code>Сайт недоступен (${result.status}), анализ не проводился</code>\n`;
+        }
+
         let techStackBlock = ``;
 
         if (result.techStack && result.techStack.length > 0) {
@@ -277,17 +278,39 @@ ${result.techStack.map((tech) => ` - <code>${this.escapeHtml(tech)}</code>`).joi
 
         return `
 <b>Результаты анализа вашего сайта:</b>
+${statusInfo.text}
 ${seoBlock}
-🤖 <b>Файл robots.txt:</b>
- - Статус: <code>${result.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
+🤖 <b>Файл robots.txt:</b> <code>${result.robotsTxtExists ? "✅ Существует" : "❌ Отсутствует"}</code>
 ${lighthouseBlock}
 ${techStackBlock}
  `;
     }
 
+    private formatStatusResult(status: number): {showLighthouse: boolean, text: string} {
+        let emoji = "⚠️"; // дефолт для странных штук
+
+        if (status >= 200 && status < 300) {
+            emoji = "✅";
+        } else if (status >= 400 && status < 500) {
+            emoji = status === 404 ? "🔍" : "🚫"; // ошибка клиента
+        } else if (status >= 500) {
+            emoji = "🔥"; // ошибка сервера
+        } else if (status >= 300 && status < 400) {
+            emoji = "🔄"; // редирект
+        }
+
+        return {
+            showLighthouse: status < 400,
+            text: `\n📊 <b>Статус:</b> ${emoji} <code>${status}</code>`
+        };
+    }
+
     private formatLighthouseResult(
-        lighthouse: JobWorkerLighthouseResult,
+        lighthouse: JobWorkerLighthouseResult | null,
     ): string {
+        if (!lighthouse) {
+            return `\n⚡️ <b>Производительность (Lighthouse):</b>\n - <code>Анализ не проводился</code>\n`;
+        }
         // Хелперы для форматирования метрик
         const formatScore = (score: number | null) => {
             if (score === null) return "<code>N/A</code>";
@@ -330,9 +353,9 @@ ${techStackBlock}
 `;
     }
 
-    private formatSeoResult(seo: JobWorkerSeoResult): string {
+    private formatSeoResult(seo: JobWorkerSeoResult | null): string {
         if (!seo) {
-            return "";
+            return `\n🔎 <b>SEO-показатели:</b>\n - <code>Анализ не проводился</code>\n`;
         }
 
         const title = seo.title ? this.escapeHtml(seo.title) : "❌ Не найден";
