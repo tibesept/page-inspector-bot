@@ -239,7 +239,8 @@ export class JobService {
                 links: data.analyzerSettings.links,
                 // FIXME: хардкод, т.к. функция не реализована до конца (fix/disable-techstack-feature)
                 techstack: false, // data.analyzerSettings.techstack,
-                ai_summary: data.analyzerSettings.ai_summary
+                ai_summary: data.analyzerSettings.ai_summary,
+                lighthouse_pro: data.analyzerSettings.lighthouse_pro
             }
         }
 
@@ -339,6 +340,10 @@ ${techStackBlock}
             return `${emoji} <code>${ms.toFixed(0)} мс</code>`;
         };
 
+        const premiumBlock = lighthouse.premiumInsights 
+            ? this.formatPremiumInsights(lighthouse.premiumInsights) 
+            : "";
+
         return `
 ⚡️ <b>Производительность (Lighthouse):</b>
  - Performance: ${formatScore(lighthouse.performance)}
@@ -350,7 +355,56 @@ ${techStackBlock}
  - LCP (Загрузка): ${formatLCP(lighthouse.lcp)}
  - CLS (Стабильность): ${formatCLS(lighthouse.cls)}
  - TBT (Интерактивность): ${formatTBT(lighthouse.tbt)}
-`;
+${premiumBlock}`;
+    }
+
+    private formatPremiumInsights(insights: NonNullable<JobWorkerLighthouseResult["premiumInsights"]>): string {
+        let text = `\n💎 <b>Премиум Инсайты (Узкие места):</b>\n`;
+        let hasData = false;
+
+        const formatList = (items: { url: string; wastedBytes: number | null; wastedMs: number | null; totalBytes: number | null }[], title: string, emoji: string) => {
+            if (!items || items.length === 0) return "";
+            hasData = true;
+            let block = `${emoji} <b>${title}:</b>\n`;
+            items.slice(0, 3).forEach(item => {
+                const info = [];
+                if (item.wastedMs) info.push(`${item.wastedMs.toFixed(0)} мс`);
+                if (item.wastedBytes) info.push(`${(item.wastedBytes / 1024).toFixed(0)} КБ`);
+                
+                let filename = item.url.split('/').pop()?.split('?')[0] || "ресурс";
+                if (!filename || filename.length < 2) {
+                    const cleanUrl = item.url.replace(/^https?:\/\//, '');
+                    filename = cleanUrl.substring(0, 25) + "...";
+                }
+                const safeName = this.escapeHtml(filename.length > 25 ? filename.substring(0, 25) + '...' : filename);
+                
+                block += `  ▪️ <code>${safeName}</code> ${info.length ? `[${info.join(', ')}]` : ''}\n`;
+            });
+            if (items.length > 3) {
+                block += `  <i>...и еще ${items.length - 3}</i>\n`;
+            }
+            return block;
+        };
+
+        const renderBlocking = formatList(insights.renderBlocking, "Блокируют отрисовку", "🚧");
+        const unusedJs = formatList(insights.unusedJavascript, "Неиспользуемый JS", "🗑️");
+        const unusedCss = formatList(insights.unusedCss, "Неиспользуемый CSS", "🎨");
+        const unoptimizedImages = formatList(insights.unoptimizedImages, "Тяжелые картинки", "🖼️");
+
+        let mainThread = "";
+        if (insights.mainThreadWork && insights.mainThreadWork.length > 0) {
+            hasData = true;
+            mainThread = `⚙️ <b>Главный поток (Топ нагрузок):</b>\n`;
+            insights.mainThreadWork.slice(0, 3).forEach(work => {
+                mainThread += `  ▪️ ${this.escapeHtml(work.group)}: <code>${work.duration.toFixed(0)} мс</code>\n`;
+            });
+        }
+
+        if (!hasData) {
+            return `\n💎 <b>Премиум Инсайты:</b>\n - <code>Проблем не обнаружено ✨</code>\n`;
+        }
+
+        return text + [renderBlocking, unusedJs, unusedCss, unoptimizedImages, mainThread].filter(b => b.length > 0).join("\n");
     }
 
     private formatSeoResult(seo: JobWorkerSeoResult | null): string {
