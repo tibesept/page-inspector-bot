@@ -12,7 +12,9 @@ export const settingToggles: ISettingsToggle[] = [
     { label: "SEO-анализ", key: "seo", child: "links" },
     { label: "SEO: битые ссылки", key: "links", parent: "seo" },
 
-    { label: "Аудит LightHouse", key: "lighthouse" },
+    { label: "Аудит LightHouse", key: "lighthouse", child: "lighthouse_pro" },
+    { label: "💎 Lighthouse PRO (10 кредитов)", key: "lighthouse_pro", parent: "lighthouse" },
+
     // { label: "Стек технологий", key: "techstack" },
     { label: "Резюме от ИИ", key: "ai_summary" },
 ];

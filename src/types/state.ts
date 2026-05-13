@@ -14,6 +14,7 @@ export interface IAnalyzerSettings {
     lighthouse: boolean;
     techstack: boolean;
     ai_summary: boolean;
+    lighthouse_pro: boolean;
 }
 export interface ISessionData {
     language: ELanguages;
